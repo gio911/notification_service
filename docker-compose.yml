@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"  # AMQP порт
+      - "15672:15672"  # Веб-интерфейс управления
+    container_name: rabbitmq_container
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 3
+      start_period: 5s
+      timeout: 5s
+    networks:
+      - rmq-network
+
+  fastapi_producer:
+    build:
+      context: .
+      dockerfile: fastapi_producer/Dockerfile
+    # command: uvicorn src.main:app --host 0.0.0.0 --port 8000
+    container_name: fastapi_producer_container
+    ports:
+      - "8000:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - ./.env
+    networks:
+      - rmq-network
+
+
+  consumer:
+    build:
+      context: .
+      dockerfile: consumer/Dockerfile
+    # command: python consumer.py
+    container_name: consumer_container
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - ./.env
+    networks:
+      - rmq-network
+
+
+
+networks:
+  rmq-network:
+    driver: bridge
