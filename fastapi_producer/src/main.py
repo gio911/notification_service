@@ -16,7 +16,7 @@ async def lifespan(_: FastAPI):
     # redis.redis = Redis(host=settings.redis_host, port=settings.redis_port)
     # session.session = AsyncSessionLocal()
     # celery.celery = Celery("notification_service", broker=settings.redis_broker_url, backend=settings.redis_backend_url)
-    rmq.rabbitmq_connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq:5672/")
+    rmq.rabbitmq_connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq:5672//")
     
     yield
 

@@ -1,15 +1,15 @@
 FROM python:3.9
 
-WORKDIR /app
+WORKDIR /consumer
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/consumer
 
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY consumer/ /app/
+COPY consumer/ /consumer/
 
-CMD ["python", "consumer.py"]
+CMD ["celery", "-A", "celery_conf", "worker", "--loglevel=info"]

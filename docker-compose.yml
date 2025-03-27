@@ -20,7 +20,6 @@ services:
     build:
       context: .
       dockerfile: fastapi_producer/Dockerfile
-    # command: uvicorn src.main:app --host 0.0.0.0 --port 8000
     container_name: fastapi_producer_container
     ports:
       - "8000:8000"
@@ -39,6 +38,8 @@ services:
       dockerfile: consumer/Dockerfile
     # command: python consumer.py
     container_name: consumer_container
+    volumes:
+      - ./consumer/:/consumer
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -48,6 +49,14 @@ services:
       - rmq-network
 
 
+  # flower:
+  #   build: ./
+  #   ports:
+  #     - "5555:5555"
+  #   depends_on:
+  #     - consumer
+  #   networks:
+  #     - rmq-network
 
 networks:
   rmq-network:
