@@ -21,7 +21,7 @@ class Producer:
             # Объявляем exchange
             exchange = await channel.declare_exchange(
                 "notification_exchange", 
-                aio_pika.ExchangeType.DIRECT, 
+                aio_pika.ExchangeType.TOPIC, 
                 durable=True
             )
 
@@ -30,7 +30,7 @@ class Producer:
 
             # Привязываем очередь к exchange с заданным routing_key
             await queue.bind(exchange, routing_key=routing_key)
-
+    
             # Публикуем сообщение в exchange с routing_key
             await exchange.publish(
                 aio_pika.Message(

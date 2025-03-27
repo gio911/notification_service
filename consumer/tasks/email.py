@@ -2,8 +2,10 @@
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from celery_conf import celery_app
+from celery import Celery
 
 import smtplib
+celery_app = Celery('consumer', broker='pyamqp://guest:guest@rabbitmq:5672//')
 
 
 

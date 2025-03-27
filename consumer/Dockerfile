@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY consumer/ /consumer/
 
-CMD ["celery", "-A", "celery_conf", "worker", "--loglevel=info"]
+CMD ["python", "start_worker.py"]
