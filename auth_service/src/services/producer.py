@@ -1,42 +1,48 @@
 from functools import lru_cache
-# from aio_pika import connect_robust
 import aio_pika
 import json
 
 from fastapi import Depends
 from src.db.rmq import get_rabbitmq_connection
-
+from src.core.logging_config import setup_logging
 
 class Producer:
     def __init__(self, rabbitmq_conn):
-        self.rabbitmq_conn=rabbitmq_conn
+        self.rabbitmq_conn = rabbitmq_conn
+        self.logger = setup_logging()
 
-    async def send_to_queue(
-        self,
-        message: dict,
-        routing_key,
-        )->None:
+    async def send_to_queue(self, message: dict, routing_key) -> None:
+        """
+        Отправляет сообщение в очередь RabbitMQ.
+        """
+        try:
             async with self.rabbitmq_conn.channel() as channel:
                 exchange = await channel.declare_exchange(
-                    "notification_exchange", 
-                    aio_pika.ExchangeType.TOPIC, 
+                    "notification_exchange",
+                    aio_pika.ExchangeType.TOPIC,
                     durable=True
                 )
-                print(message, 3232)
-                del message["id"]
-                # Публикуем сообщение в exchange с routing_key
+
+                if "id" in message:
+                    del message["id"]
+
+                # Публикуем сообщение
                 await exchange.publish(
                     aio_pika.Message(
                         body=json.dumps(message).encode(),
                         delivery_mode=aio_pika.DeliveryMode.PERSISTENT
                     ),
-                    routing_key=routing_key  # Ключ маршрутизации
+                    routing_key=routing_key
                 )
-                
+
+                self.logger.info("Сообщение отправлено в RabbitMQ. Routing key: %s", routing_key)
+
+        except Exception as e:
+            self.logger.error("Ошибка при отправке сообщения в RabbitMQ: %s", str(e))
+
+
 @lru_cache
 def get_rmq_publisher_service(
     rabbitmq_connection=Depends(get_rabbitmq_connection),
-)->Producer:
+) -> Producer:
     return Producer(rabbitmq_connection)
-
-

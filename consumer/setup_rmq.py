@@ -15,7 +15,7 @@ async def setup_rabbitmq():
         queue_mail_generate = await channel.declare_queue("mail_generate", durable=True)
         await queue_mail_generate.bind(exchange, routing_key="mail.*")  # Получает лайки
 
-        queue_general = await channel.declare_queue("general_queue", durable=True)
-        await queue_general.bind(exchange, routing_key="general.event")  # Для других событий
+        queue_email_send = await channel.declare_queue("email_send", durable=True)
+        await queue_email_send.bind(exchange, routing_key="create.*")  # Для других событий
 
         print("RabbitMQ настроен!")

@@ -14,13 +14,7 @@ echo_setting = os.getenv("SQLALCHEMY_ECHO", "False") in ["True"]
 engine = create_async_engine(dsn, echo=echo_setting, future=True)
 async_session = sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
-)  
-
-# Функция для внедрения сессии
-# async def get_session() -> AsyncSession:
-#     async with async_session() as session:
-#         return session
-    
+)    
     
 async def get_session() -> AsyncSession:
    async with async_session() as session:

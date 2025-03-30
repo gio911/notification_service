@@ -1,4 +1,3 @@
-import aio_pika
 
 rabbitmq_connection = None
 

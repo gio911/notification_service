@@ -18,5 +18,5 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- Вставка данных с фиксированным UUID для id
 INSERT INTO users (id, login, first_name, last_name, email)
-VALUES ('123e4567-e89b-12d3-a456-426614174000', 'test_user', 'John', 'Doe', 'john.doe@example.com')
+VALUES ('123e4567-e89b-12d3-a456-426614174000', 'test_user', 'John', 'Doe', 'centurion91186@gmail.com')
 ON CONFLICT (login) DO NOTHING;

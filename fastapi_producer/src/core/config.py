@@ -1,15 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-    
+
 from pathlib import Path
-from logging import config as logging_config
 
-from pydantic import Field, SecretStr
-from dotenv import load_dotenv
-
-# from src.core.logger import LOGGING
-
-# logging_config.dictConfig(LOGGING)
+from pydantic import Field
 
 BASE_DIR = Path(__file__).parent.parent.parent
 
@@ -35,7 +29,6 @@ class Settings(BaseSettings):
         env_file_encoding='utf-8',
         extra='ignore'
     )
-
 
     @property
     def postgres_url(self) -> str:

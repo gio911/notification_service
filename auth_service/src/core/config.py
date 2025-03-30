@@ -7,12 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from src.core.logger import LOGGING
-
-logging_config.dictConfig(LOGGING)
-
 BASE_DIR = Path(__file__).parent.parent.parent
-
 
 class Settings(BaseSettings):
 

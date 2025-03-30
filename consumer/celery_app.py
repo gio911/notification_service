@@ -4,85 +4,97 @@ import httpx
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from jinja2 import Template
+from config.logging_config import setup_logging
+
+logger = setup_logging()
 
 celery_app = Celery('task', broker='pyamqp://guest@rabbitmq:5672//')
 
-
 @shared_task
 def transfer_to_auth_service(user_id, token):
-    print(user_id, token,  39393)
-    data = {"user_id":user_id, "token":token}
-    # process_data.apply_async(args=[data])
+    logger.info(f"Обрабатываем пользователя {user_id} с токеном {token}")
+    data = {"user_id": user_id, "token": token}
     headers = {
-        "Authorization": data.get("token"),  # Пример токена для авторизации
-        "Content-Type": "application/json"  # Тип содержимого
+        "Authorization": data.get("token"),  
+        "Content-Type": "application/json"
     }
-    user_data={"user_id":data.get("user_id")}
-    print(user_data, 9999)
+    user_data = {"user_id": data.get("user_id")}
+    logger.debug(f"Данные пользователя: {user_data}")
+    
     with httpx.Client() as client:
-        response = client.post("http://auth:8001/api/v1/users/get_user_data", json={"user_id":data.get("user_id")}, headers=headers)
+        try:
+            response = client.post("http://auth:8001/api/v1/users/get_user_data", json={"user_id": data.get("user_id")}, headers=headers)
+            if response.status_code == 200:
+                logger.info("Данные успешно отправлены в другой сервис")
+            else:
+                logger.error(f"Не удалось отправить данные в другой сервис, код статуса: {response.status_code}")
+        except httpx.RequestError as e:
+            logger.error(f"Ошибка запроса: {e}")
 
-        if response.status_code == 200:
-            print("Successfully sent data to the other service")
-        else:
-            print("Failed to send data to the other service")
-
-@shared_task      
+@shared_task
 def transfer_to_deliver_service(first_name, email):
-    """
-    Here we will be sent the message to mail deliver service
-    """
-    user_data = {"first_name":first_name, "email":email}
-    print(first_name, email, 98393)
+    """Отправляем сообщение в сервис доставки писем"""
+    user_data = {"first_name": first_name, "email": email}
+    logger.info(f"Обрабатываем email для {first_name} ({email})")
     headers = {
         "Content-Type": "application/json"
     }
     
     with httpx.Client() as client:
-        response = client.post("http://email_deliver_service:8003/api/v1/email_creation/create_email", 
-                               json={"first_name":user_data.get("first_name"), "email":user_data.get("email")}, 
-                               headers=headers)
+        try:
+            response = client.post("http://email_deliver_service:8003/api/v1/email_creation/create_email", 
+                                   json={"first_name": user_data.get("first_name"), "email": user_data.get("email")}, 
+                                   headers=headers)
 
-        if response.status_code == 200:
-            print("Successfully sent data to the Message Former service")
-        else:
-            print("Failed to send data to the Message Former service")
+            if response.status_code == 200:
+                logger.info("Данные успешно отправлены в сервис формирования сообщений")
+            else:
+                logger.error(f"Не удалось отправить данные в сервис формирования сообщений, код статуса: {response.status_code}")
+        except httpx.RequestError as e:
+            logger.error(f"Ошибка запроса: {e}")
+
+@shared_task
+def send_email(to_email, first_name):
+    """Отправка письма (фейковая отправка письма в этом примере)"""
+    body_text = generate_email(to_email, first_name)
+    # Создание MIME-сообщения
+    msg = MIMEMultipart()
+    msg['From'] = "rmqapp@gmail.com"
+    msg['To'] = to_email
+    msg['Subject'] = "Новая новинка в онлайн кинотеатре!"
     
-   
-# @shared_task
-# def process_data(data):
-#     print(33292929)
-#     headers = {
-#         "Authorization": data.get("token"),  # Пример токена для авторизации
-#         "Content-Type": "application/json"  # Тип содержимого
-#     }
-#     user_data={"user_id":data.get("user_id")}
-#     print(user_data, 9999)
-#     with httpx.Client() as client:
-#         response = client.post("http://auth:8001/api/v1/users", json={"user_id":data.get("user_id")}, headers=headers)
+    # Тело письма в HTML формате
+    msg.attach(MIMEText(body_text, 'html'))
 
-#         if response.status_code == 200:
-#             print("Successfully sent data to the other service")
-#         else:
-#             print("Failed to send data to the other service")    
-
-
-# celery -A celery_app worker --loglevel=info
-
-
-
-    # msg = MIMEMultipart()
-    # msg['From'] = "rmqapp@gmail.com"
-    # msg['To'] = recipient
-    # msg['Subject'] = subject
-    # msg.attach(MIMEText(body_text, 'plain'))
-
-    # try:
-    #     with smtplib.SMTP('smtp.gmail.com', 587) as server:
-    #         server.starttls()
-    #         server.login("rmqapp@gmail.com", "cbtjvhsalfpnopfu")
-    #         server.sendmail("rmqapp@gmail.com", recipient, msg.as_string())
-    #         print(f"Email sent to {recipient} successfully")
-    # except Exception as e:
-    #     print(f"Error sending email: {e}")
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()  # Начинаем защищенное соединение
+            server.login("rmqapp@gmail.com", "cbtjvhsalfpnopfu")  # Логин и пароль
+            
+            server.sendmail("rmqapp@gmail.com", to_email, msg.as_string())
+            logger.info(f"Письмо успешно отправлено на {to_email}")
     
+    except Exception as e:
+        logger.error(f"Ошибка при отправке письма: {e}")
+    logger.info(f"Отправлено письмо на {to_email}: {first_name}")
+
+def generate_email(email, first_name):
+    email_template = """
+    <html>
+        <body>
+            <p>Здравствуйте, {{ first_name }}!</p>
+            <p>Мы рады сообщить вам, что в нашем онлайн кинотеатре появилась новинка</p>
+            <p>Не пропустите возможность посмотреть его первым.</p>
+            <p>Ваш email: {{ email }}</p>
+            <p>Наслаждайтесь просмотром!</p>
+            <p>С уважением, команда онлайн кинотеатра.</p>
+        </body>
+    </html>
+    """
+    
+    template = Template(email_template)
+    
+    email_content = template.render(first_name=first_name, email=email)
+    
+    return email_content

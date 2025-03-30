@@ -19,9 +19,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = "your_secret_key"  # Секретный ключ для подписи токенов
 ALGORITHM = "HS256"  # Алгоритм шифрования токена
-ACCESS_TOKEN_EXPIRE_MINUTES = 1  # Время жизни токена в минутах
-REFRESH_TOKEN_EXPIRE_DAYS = 7
-
 class PostgresManager:
     
     def __init__(self, session:AsyncSession):
@@ -31,6 +28,5 @@ class PostgresManager:
         stmt = select(model).where(model.id==id)
         result = await self.session.execute(stmt)
         user = result.scalar_one_or_none()
-        # print(f"User found: {user}")  # ✅ Проверяем, что объект найден
 
         return user

@@ -30,8 +30,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# # Роуты
+#Роуты
 app.include_router(transfer_email.router, prefix='/api/v1/email_creation', tags=['email_creation'])
-# app.include_router(roles.router, prefix='/api/v1/roles', tags=['roles'])
 
 

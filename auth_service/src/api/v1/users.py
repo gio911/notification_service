@@ -3,10 +3,9 @@ from ...schemas.entity import User, UserForNotification
 from src.services.users import UserService, get_user_service
 from src.services.producer import get_rmq_publisher_service, Producer
 from fastapi import Depends
+from src.core.logging_config import setup_logging
 
-import logging
-logger = logging.getLogger(__name__)
-
+logger=setup_logging()
 
 router = APIRouter()
 
@@ -19,22 +18,25 @@ def serialize_sqlalchemy_object(obj):
 async def get_user_data(user: User,
                         authorization: str = Header(..., alias="Authorization"),
                         user_service: UserService = Depends(get_user_service),
-                        producer_service: Producer = Depends(get_rmq_publisher_service)
-                        ):
+                        producer_service: Producer = Depends(get_rmq_publisher_service)):
     """
     Эндпоинт для получения данных пользователя по user_id.
     Проверяет валидность токена в заголовке Authorization.
     """
-    print(123321)
-    logger.debug(f"Received user_id: {user.user_id}, authorization: {authorization}")
-    print(123321)
+    logger.info(f"Запрос получен: user_id={user.user_id}, Authorization={authorization}")
 
     user_obj = await user_service.get_user_data_for_admin(user.user_id, authorization)
-    print(user_obj, 83774)
-    print(type(user_obj), 893774)
+    
+    if not user_obj:
+        logger.warning(f"Пользователь с ID {user.user_id} не найден или не авторизован")
+        return {"detail": "Пользователь не найден"}
+
+    logger.info(f"Данные пользователя получены: {user_obj}")
+
     # Преобразуем SQLAlchemy объект в словарь
     user_dict = serialize_sqlalchemy_object(user_obj)
 
+    logger.info(f"Отправка данных пользователя в очередь: {user_dict}")
     await producer_service.send_to_queue(user_dict, routing_key="mail.generate")
 
     return user_obj
