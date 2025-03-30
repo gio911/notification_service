@@ -6,7 +6,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from setup_rmq import setup_rabbitmq
-from celery_app import send_email
+from celery_app import transfer_to_auth_service, transfer_to_deliver_service
 import subprocess
 
 
@@ -33,29 +33,54 @@ class Consumer:
         async with self.rabbitmq_conn:
             channel = await self.rabbitmq_conn.channel()
 
-            # Получаем очередь
-            queue = await channel.get_queue(self.queue_name, ensure=True)
+            if self.queue_name == 'new_film_notif_queue':
+                # Получаем очередь
+                queue = await channel.get_queue(self.queue_name, ensure=True)
+                # Подписываемся на очередь и начинаем обрабатывать сообщения
+                await queue.consume(self.process_request_user_data)
+                print(f"Consumer started, listening on {self.queue_name}...")
 
-            # Подписываемся на очередь и начинаем обрабатывать сообщения
-            await queue.consume(self.process_send_email)
-            print(f"Consumer started, listening on {self.queue_name}...")
-
-            await asyncio.Future()  # Чтобы не завершалась программа
+                await asyncio.Future()  # Чтобы не завершалась программа
             
- 
-    async def process_send_email(self, message: aio_pika.IncomingMessage):
+            elif self.queue_name == 'mail_generate':
+                # Получаем очередь
+                queue = await channel.get_queue(self.queue_name, ensure=True)
+                # Подписываемся на очередь и начинаем обрабатывать сообщения
+                await queue.consume(self.process_email_transfer)
+                print(f"Consumer started, listening on {self.queue_name}...")
+
+                await asyncio.Future()  # Чтобы не завершалась программа
+             
+             
+             
+             
+                
+    async def process_email_transfer(self, message: aio_pika.IncomingMessage):
+        print(message,90900) 
+        async with message.process():
+            print(182)
+            body = json.loads(message.body.decode())    
+            print(f"Received email message: {body}")
+
+            # Извлекаем данные
+            first_name=body['first_name']
+            email=body['email']  
+            
+            print(first_name, email, 9009)
+            transfer_to_deliver_service.delay(first_name, email)      
+                
+    async def process_request_user_data(self, message: aio_pika.IncomingMessage):
         async with message.process():
             print(172)
             body = json.loads(message.body.decode())    
             print(f"Received email message: {body}")
 
             # Извлекаем данные
-            recipient = body['recipient']
-            subject = body['subject']
-            body_text = body['body']
+            user_id=body['user_id']
+            token=body['token']
 
             # Отправка письма через Celery
-            send_email.delay(recipient, subject, body_text)
+            transfer_to_auth_service.delay(user_id, token)
             print("Email send task has been queued")
 
 
@@ -64,8 +89,8 @@ async def main():
     await setup_rabbitmq()
 
     # Создаём и подключаем consumers
-    consumer1 = Consumer('email_queue')
-    consumer2 = Consumer('likes_queue')
+    consumer1 = Consumer('new_film_notif_queue')
+    consumer2 = Consumer('mail_generate')
     await consumer1.connect()
     await consumer2.connect()
 

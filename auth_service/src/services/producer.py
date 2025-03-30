@@ -22,6 +22,8 @@ class Producer:
                     aio_pika.ExchangeType.TOPIC, 
                     durable=True
                 )
+                print(message, 3232)
+                del message["id"]
                 # Публикуем сообщение в exchange с routing_key
                 await exchange.publish(
                     aio_pika.Message(

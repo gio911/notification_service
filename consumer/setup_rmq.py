@@ -9,11 +9,11 @@ async def setup_rabbitmq():
         exchange = await channel.declare_exchange("notification_exchange", aio_pika.ExchangeType.TOPIC, durable=True)
 
         # Создаём очереди
-        queue_email = await channel.declare_queue("email_queue", durable=True)
-        await queue_email.bind(exchange, routing_key="email.*")  # Получает email-уведомления
+        queue_new_film_notif = await channel.declare_queue("new_film_notif_queue", durable=True)
+        await queue_new_film_notif.bind(exchange, routing_key="user.*")  # Получает email-уведомления
 
-        queue_likes = await channel.declare_queue("likes_queue", durable=True)
-        await queue_likes.bind(exchange, routing_key="like.*")  # Получает лайки
+        queue_mail_generate = await channel.declare_queue("mail_generate", durable=True)
+        await queue_mail_generate.bind(exchange, routing_key="mail.*")  # Получает лайки
 
         queue_general = await channel.declare_queue("general_queue", durable=True)
         await queue_general.bind(exchange, routing_key="general.event")  # Для других событий
