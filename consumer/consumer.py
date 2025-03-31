@@ -2,7 +2,7 @@ import asyncio
 import aio_pika
 import json 
 from setup_rmq import setup_rabbitmq
-from celery_app import transfer_to_auth_service, transfer_to_deliver_service, send_email
+from celery_app import transfer_to_auth_service, transfer_to_deliver_service, send_email, send_email_for_register_user
 import subprocess
 from config.logging_config import setup_logging
 
@@ -67,6 +67,19 @@ class Consumer:
                 logger.info(f"Потребитель запущен, прослушиваем очередь {self.queue_name}...")
                 self.batch_timer = asyncio.create_task(self.batch_timeout())
                 await asyncio.Future()  # Чтобы не завершалась программа
+                
+                        
+            elif self.queue_name == "users_registration":
+                logger.info("Запуск потребителя для отправки уведомления пользователю об успешной регистрации")
+                # Получаем очередь
+                queue = await channel.get_queue(self.queue_name, ensure=True)
+                # Подписываемся на очередь и начинаем обрабатывать сообщения
+                await queue.consume(self.process_user_registration)
+                logger.info(f"Потребитель запущен, прослушиваем очередь {self.queue_name}...")
+                self.batch_timer = asyncio.create_task(self.batch_timeout())
+                await asyncio.Future()  # Чтобы не завершалась программа
+    
+    
     
     async def batch_timeout(self):
         """Ждет BATCH_TIMEOUT секунд и отправляет письма, если они есть"""
@@ -76,12 +89,16 @@ class Consumer:
                 logger.info(f"Время ожидания пачки писем истекло, отправляем {len(self.batch)} писем.")
                 await self.send_batch()
                 
+                
+                
     async def send_batch(self):
         """Отправляет письма пачкой"""
         for email_data in self.batch:
             send_email.delay(email_data["email"], email_data["first_name"])
         self.batch.clear()  # Очищаем батч после отправки
         logger.info(f"Отправлено {len(self.batch)} писем.")
+
+
 
     async def process_send_email(self, message: aio_pika.IncomingMessage):
         async with message.process():
@@ -90,6 +107,7 @@ class Consumer:
             self.batch.append(body)
             if len(self.batch) >= BATCH_SIZE:
                 await self.send_batch()
+                
                 
     async def process_email_transfer(self, message: aio_pika.IncomingMessage):
         async with message.process():
@@ -125,7 +143,7 @@ class Consumer:
             user_email = body['email']
 
             logger.info(f"Обрабатываем данные для пользователя с ID: {user_name}")
-            transfer_to_auth_service.delay(user_name, user_email)
+            send_email_for_register_user.delay(user_name, user_email)
             logger.info("Задача на отправку письма поставлена в очередь")
             
             
