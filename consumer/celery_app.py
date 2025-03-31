@@ -6,10 +6,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from jinja2 import Template
 from config.logging_config import setup_logging
+from config.config import settings
 
 logger = setup_logging()
 
-celery_app = Celery('task', broker='pyamqp://guest@rabbitmq:5672//')
+celery_app = Celery('task', broker=f'pyamqp://{settings.rmq_user}:{settings.rmq_password}@{settings.rmq_host}:{settings.rmq_port}//')
 
 @shared_task
 def transfer_to_auth_service(user_id, token):
@@ -79,6 +80,7 @@ def send_email(to_email, first_name):
         logger.error(f"Ошибка при отправке письма: {e}")
     logger.info(f"Отправлено письмо на {to_email}: {first_name}")
 
+
 def generate_email(email, first_name):
     email_template = """
     <html>
@@ -98,3 +100,75 @@ def generate_email(email, first_name):
     email_content = template.render(first_name=first_name, email=email)
     
     return email_content
+
+
+@shared_task
+def send_email(to_email, first_name):
+    """Отправка письма"""
+    body_text = generate_email(to_email, first_name)
+    # Создание MIME-сообщения
+    msg = MIMEMultipart()
+    msg['From'] = "rmqapp@gmail.com"
+    msg['To'] = to_email
+    msg['Subject'] = "Новая новинка в онлайн кинотеатре!"
+    
+    # Тело письма в HTML формате
+    msg.attach(MIMEText(body_text, 'html'))
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()  # Начинаем защищенное соединение
+            server.login("rmqapp@gmail.com", "cbtjvhsalfpnopfu")  # Логин и пароль
+            
+            server.sendmail("rmqapp@gmail.com", to_email, msg.as_string())
+            logger.info(f"Письмо успешно отправлено на {to_email}")
+    
+    except Exception as e:
+        logger.error(f"Ошибка при отправке письма: {e}")
+    logger.info(f"Отправлено письмо на {to_email}: {first_name}")
+
+
+def generate_email_for_register(user_name, user_email):
+    email_template = """
+    <html>
+        <body>
+            <p>Здравствуйте, {{ user_name }}!</p>
+            <p>Вы зарегистрированы в сервисе</p>
+            
+            <p>Ваш email: {{ user_email }}</p>
+            <p>Наслаждайтесь нашим онлайн кинотеатром!</p>
+            <p>С уважением, команда онлайн кинотеатра.</p>
+        </body>
+    </html>
+    """
+    
+    template = Template(email_template)
+    
+    email_content = template.render(first_name= user_name, email=user_email)
+    
+    return email_content
+
+@shared_task
+def send_email_for_register_user(user_name, user_email):
+    """Отправка письма"""
+    body_text = generate_email_for_register(user_name, user_email)
+    # Создание MIME-сообщения
+    msg = MIMEMultipart()
+    msg['From'] = "rmqapp@gmail.com"
+    msg['To'] = user_email
+    msg['Subject'] = "Новая новинка в онлайн кинотеатре!"
+    
+    # Тело письма в HTML формате
+    msg.attach(MIMEText(body_text, 'html'))
+
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()  # Начинаем защищенное соединение
+            server.login("rmqapp@gmail.com", "cbtjvhsalfpnopfu")  # Логин и пароль
+            
+            server.sendmail("rmqapp@gmail.com", user_email, msg.as_string())
+            logger.info(f"Письмо успешно отправлено на {user_email}")
+    
+    except Exception as e:
+        logger.error(f"Ошибка при отправке письма: {e}")
+    logger.info(f"Отправлено письмо на {user_email}: {user_name}")

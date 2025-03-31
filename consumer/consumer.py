@@ -81,7 +81,7 @@ class Consumer:
         for email_data in self.batch:
             send_email.delay(email_data["email"], email_data["first_name"])
         self.batch.clear()  # Очищаем батч после отправки
-        logger.info(f"📨 Отправлено {len(self.batch)} писем.")
+        logger.info(f"Отправлено {len(self.batch)} писем.")
 
     async def process_send_email(self, message: aio_pika.IncomingMessage):
         async with message.process():
@@ -102,6 +102,7 @@ class Consumer:
             logger.info(f"Обрабатываем передачу данных для {first_name} ({email})")
             transfer_to_deliver_service.delay(first_name, email)      
 
+
     async def process_request_user_data(self, message: aio_pika.IncomingMessage):
         async with message.process():
             body = json.loads(message.body.decode())    
@@ -113,6 +114,20 @@ class Consumer:
             logger.info(f"Обрабатываем данные для пользователя с ID: {user_id}")
             transfer_to_auth_service.delay(user_id, token)
             logger.info("Задача на отправку письма поставлена в очередь")
+            
+    
+    async def process_user_registration(self, message: aio_pika.IncomingMessage):
+        async with message.process():
+            body = json.loads(message.body.decode())    
+            logger.info(f"Получено сообщение с данными пользователя: {body}")
+
+            user_name = body['name']
+            user_email = body['email']
+
+            logger.info(f"Обрабатываем данные для пользователя с ID: {user_name}")
+            transfer_to_auth_service.delay(user_name, user_email)
+            logger.info("Задача на отправку письма поставлена в очередь")
+            
             
 async def main():
    # Запускаем настройку RabbitMQ

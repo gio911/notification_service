@@ -4,13 +4,13 @@ from fastapi.responses import ORJSONResponse
 from src.db import rmq
 from src.api.endpoints import notifications
 import aio_pika
-
+from src.core.config import settings
 
 # Создаем экземпляр FastAPI
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     
-    rmq.rabbitmq_connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq:5672/")
+    rmq.rabbitmq_connection = await aio_pika.connect_robust(f"amqp://{settings.rmq_user}:{settings.rmq_password}@{settings.rmq_host}:{settings.rmq_port}/")
     
     yield
 
