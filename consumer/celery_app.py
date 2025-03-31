@@ -10,7 +10,7 @@ from config.config import settings
 
 logger = setup_logging()
 
-celery_app = Celery('task', broker=f'pyamqp://{settings.rmq_user}:{settings.rmq_password}@{settings.rmq_host}:{settings.rmq_port}//')
+celery_app = Celery('task', broker=f'pyamqp://{settings.rmq_user}:{settings.rmq_password}@{settings.rmq_host}:5672//')
 
 @shared_task
 def transfer_to_auth_service(user_id, token):

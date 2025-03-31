@@ -134,19 +134,21 @@ async def main():
     await setup_rabbitmq()
 
     # Создаём и подключаем consumers
-    consumer1 = Consumer('new_film_notif_queue')
-    consumer2 = Consumer('mail_generate')
-    consumer3 = Consumer('email_send')
+    new_film_consumer = Consumer('new_film_notif_queue')
+    mail_generate_consumer = Consumer('mail_generate')
+    email_send_consumer = Consumer('email_send')
+    users_registration_consumer = Consumer('users_registration')
     
-    await consumer1.connect()
-    await consumer2.connect()
-    await consumer3.connect()
+    await new_film_consumer.connect()
+    await mail_generate_consumer.connect()
+    await email_send_consumer.connect()
+    await users_registration_consumer.connect()
 
     # Запускаем Celery Worker в отдельном процессе
     celery_process = subprocess.Popen(['celery', '-A', 'celery_app', 'worker', '--loglevel=info'])
 
     # Потребляем сообщения
-    await asyncio.gather(consumer1.consume(), consumer2.consume(), consumer3.consume())
+    await asyncio.gather(new_film_consumer.consume(), mail_generate_consumer.consume(), email_send_consumer.consume(), users_registration_consumer.consume())
 
     # Закрываем процесс Celery при завершении
     celery_process.terminate()
