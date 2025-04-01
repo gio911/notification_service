@@ -1,10 +1,10 @@
-
 from pydantic import BaseModel
 
+
 class User(BaseModel):
-    user_id:str
+    user_id: str
 
 
 class NewUser(BaseModel):
-    name:str
-    email:str
+    name: str
+    email: str

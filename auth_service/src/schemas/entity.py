@@ -4,11 +4,12 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+
 class User(BaseModel):
-    user_id:str
-    
+    user_id: str
+
     class Config:
-        orm_mode = True 
+        orm_mode = True
 
 
 class UserForNotification(BaseModel):
@@ -17,7 +18,6 @@ class UserForNotification(BaseModel):
     first_name: str
     last_name: str
     email: str
-    
+
     class Config:
-        orm_mode = True 
-    
+        orm_mode = True

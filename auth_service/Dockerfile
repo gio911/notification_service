@@ -19,6 +19,3 @@ COPY . .
 RUN chmod +x entrypoint.sh
 
 ENTRYPOINT ["bash", "entrypoint.sh"]
-
-# Команда для запуска приложения с использованием uvicorn
-# CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8001"]

@@ -8,6 +8,8 @@ from src.core.logging_config import setup_logging
 
 
 logger = setup_logging()
+
+
 class Producer:
     def __init__(self, rabbitmq_conn):
         self.rabbitmq_conn = rabbitmq_conn
@@ -19,25 +21,29 @@ class Producer:
         try:
             async with self.rabbitmq_conn.channel() as channel:
                 exchange = await channel.declare_exchange(
-                    "notification_exchange",
+                    'notification_exchange',
                     aio_pika.ExchangeType.TOPIC,
-                    durable=True
+                    durable=True,
                 )
-                
-                logger.debug("Отправка сообщения: %s", message)
-                
+
+                logger.debug('Отправка сообщения: %s', message)
+
                 await exchange.publish(
                     aio_pika.Message(
                         body=json.dumps(message).encode(),
-                        delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+                        delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                     ),
-                    routing_key=routing_key
+                    routing_key=routing_key,
                 )
-                
-                logger.info("Сообщение успешно отправлено в очередь с ключом маршрутизации: %s", routing_key)
+
+                logger.info(
+                    'Сообщение успешно отправлено в очередь с ключом маршрутизации: %s',
+                    routing_key,
+                )
         except Exception as e:
-            logger.error("Ошибка при отправке сообщения: %s", str(e))
+            logger.error('Ошибка при отправке сообщения: %s', str(e))
             raise
+
 
 @lru_cache
 def get_rmq_publisher_service(

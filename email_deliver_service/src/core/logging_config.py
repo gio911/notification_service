@@ -1,5 +1,6 @@
 import logging
 
+
 def setup_logging():
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)  # Устанавливаем уровень логирования

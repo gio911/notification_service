@@ -6,6 +6,7 @@ from fastapi import Depends
 from src.db.rmq import get_rabbitmq_connection
 from src.core.logging_config import setup_logging
 
+
 class Producer:
     def __init__(self, rabbitmq_conn):
         self.rabbitmq_conn = rabbitmq_conn
@@ -18,27 +19,32 @@ class Producer:
         try:
             async with self.rabbitmq_conn.channel() as channel:
                 exchange = await channel.declare_exchange(
-                    "notification_exchange",
+                    'notification_exchange',
                     aio_pika.ExchangeType.TOPIC,
-                    durable=True
+                    durable=True,
                 )
 
-                if "id" in message:
-                    del message["id"]
+                if 'id' in message:
+                    del message['id']
 
                 # Публикуем сообщение
                 await exchange.publish(
                     aio_pika.Message(
                         body=json.dumps(message).encode(),
-                        delivery_mode=aio_pika.DeliveryMode.PERSISTENT
+                        delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                     ),
-                    routing_key=routing_key
+                    routing_key=routing_key,
                 )
 
-                self.logger.info("Сообщение отправлено в RabbitMQ. Routing key: %s", routing_key)
+                self.logger.info(
+                    'Сообщение отправлено в RabbitMQ. Routing key: %s',
+                    routing_key,
+                )
 
         except Exception as e:
-            self.logger.error("Ошибка при отправке сообщения в RabbitMQ: %s", str(e))
+            self.logger.error(
+                'Ошибка при отправке сообщения в RabbitMQ: %s', str(e)
+            )
 
 
 @lru_cache

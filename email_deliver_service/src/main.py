@@ -10,22 +10,27 @@ from src.core.config import settings
 # Создаем экземпляр FastAPI
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    
-    rmq.rabbitmq_connection = await aio_pika.connect_robust(f"amqp://{settings.rmq_user}:{settings.rmq_password}@{settings.rmq_host}:5672/")
-    
+
+    rmq.rabbitmq_connection = await aio_pika.connect_robust(
+        f'amqp://{settings.rmq_user}:{settings.rmq_password}@{settings.rmq_host}:5672/'
+    )
+
     yield
 
     await rmq.rabbitmq_connection.close()
+
 
 # Один экземпляр FastAPI
 app = FastAPI(
     docs_url='/api/openapi',
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
-#Роуты
-app.include_router(transfer_email.router, prefix='/api/v1/email_creation', tags=['email_creation'])
-
-
+# Роуты
+app.include_router(
+    transfer_email.router,
+    prefix='/api/v1/email_creation',
+    tags=['email_creation'],
+)

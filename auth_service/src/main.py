@@ -17,9 +17,11 @@ import logging
 # Создаем экземпляр FastAPI
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    
-    rmq.rabbitmq_connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq:5672/")
-    
+
+    rmq.rabbitmq_connection = await aio_pika.connect_robust(
+        'amqp://guest:guest@rabbitmq:5672/'
+    )
+
     yield
 
     # Закрытие соединений при завершении работы
@@ -33,11 +35,11 @@ app = FastAPI(
     openapi_url='/api/openapi.json',
     default_response_class=ORJSONResponse,
     lifespan=lifespan,
-    redirect_slashes=False
+    redirect_slashes=False,
 )
 
 # Логирование
-logger.info("Логгер настроен!")
+logger.info('Логгер настроен!')
 
 # Роуты
 app.include_router(users.router, prefix='/api/v1/users', tags=['users'])

@@ -2,36 +2,9 @@
 set -e  # Прекращает выполнение при любой ошибке
 set -x  # Показывает все команды, которые выполняются
 
-# Ожидаем доступности PostgreSQL
-# echo "POSTGRES_HOST=$POSTGRES_HOST"
-# echo "SQL_PORT=$SQL_PORT"
-
-# until pg_isready -h "$POSTGRES_HOST" -p "$SQL_PORT"; do
-#   echo "Ожидание PostgreSQL ($POSTGRES_HOST:$SQL_PORT)..."
-#   sleep 1
-# done
-# alembic stamp head
-# alembic revision --autogenerate -m "Initial migration"
-
-# # Применение миграций
-# echo "Применяем миграции Alembic..."
-# if alembic upgrade head; then
-#     echo "Миграции успешно применены."
-# else
-#     echo "Ошибка при применении миграций Alembic!"
-#     exit 1
-# fi
-
-# Создание суперпользователя
-# echo "Создание ролей и прав..."
-# python ./src/init_scripts/superuser_creation.py
-# echo "Роли и права созданы."
-
 # Запуск FastAPI
 echo "Запускаем FastAPI..."
 exec uvicorn src.main:app --host 0.0.0.0 --port 8001 --reload
-
-
 
 
 
